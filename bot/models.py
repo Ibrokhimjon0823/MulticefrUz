@@ -17,7 +17,7 @@ class User(AbstractUser):
     objects = UserManager()
 
     def __str__(self):
-        return f"{self.telegram_id} - {self.username}"
+        return f"{self.telegram_id} - {self.username if self.username else self.first_name}"
 
 
 class Attempt(models.Model):

@@ -70,7 +70,6 @@ class Command(BaseCommand):
         ],
         "Global Issues": ["economy", "migration", "development", "globalization"],
     }
-
     def is_question_unique(self, question_text):
         """Check if question is unique using content hash"""
         content_hash = hashlib.md5(question_text.lower().encode()).hexdigest()
@@ -92,6 +91,7 @@ class Command(BaseCommand):
                 self.stdout.write(
                     self.style.ERROR(f"Error generating Test {test_num}: {str(e)}")
                 )
+
 
     def generate_test(self, test_num):
         self.stdout.write(f"Generating Test {test_num}...")

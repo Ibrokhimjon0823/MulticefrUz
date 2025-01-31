@@ -1,10 +1,8 @@
-import math
 import os
 import re
 from typing import Dict, List
 
 import requests
-import stanza
 import whisper
 from django.core.management.base import BaseCommand
 from pydub import AudioSegment
@@ -369,7 +367,7 @@ def format_evaluation_response(transcript, evaluation):
     tips = "\n".join([f"• {line.strip()}" for line in tips.split("\n") if line.strip()])
 
     # Return only the formatted text
-    formatted_response = f"""
+    return f"""
 🎤 *Transcript*:
 _{truncate_text(transcript, 300)}_
 
@@ -379,70 +377,42 @@ _{truncate_text(transcript, 300)}_
 {format_score("Grammatical Range", scores)}
 {format_score("Pronunciation", scores)}
 
-🌟 *Overall Band Score*: {validate_score(overall, "Overall Band Score", transcript)}
+🌟 *Overall Band Score*: {format_overall(overall)}
 
 📝 *Feedback*:
 {feedback}
 
+💡 *Tips for improvement*
+{tips}
 """
-    penalties = calculate_penalties(transcript)
-    adjusted_overall = apply_penalties(overall, penalties)
-
-    # Update response with penalty information
-    formatted_response += f"\n🔴 *Automatic Penalties Applied:*\n"
-    formatted_response += f"- Grammar errors: {penalties['grammar_errors']}\n"
-    formatted_response += f"- Word repetitions: {penalties['repetitions']}\n"
-    formatted_response += f"- Fillers: {penalties['fillers']}\n"
-    formatted_response += f"- Long pauses: {penalties['long_pauses']}\n"
-    formatted_response += f"\n🌟 *Adjusted Overall Score*: {validate_score(adjusted_overall, 'Overall Band Score', transcript)}"
-
-    return formatted_response
 
 
 def get_hf_evaluation(text):
-    """Improved evaluation prompt with strict IELTS criteria"""
-    prompt = f"""Act as a strict IELTS examiner. Analyze this speaking response using official IELTS band descriptors.
-    
-**Evaluation Rules:**
-1. Score each category 0-9 using .0 or .5 increments ONLY
-2. Be critical - common mistakes should lower scores
-3. Follow this exact format:
-
+    """Get evaluation from Hugging Face API"""
+    prompt = f"""As an IELTS speaking examiner, analyze this response strictly following these rules:
+1. Scores must use .0 or .5 increments
+2. Follow this exact format:
 [Fluency/Coherence]: X.5/9
-- Hesitations: {{count}}
-- Cohesion issues: {{count}}
 [Lexical Resource]: X.0/9
-- Repetitions: {{count}}
-- Inappropriate vocabulary: {{count}}
 [Grammatical Range]: X.5/9
-- Grammar errors: {{count}}
-- Tense errors: {{count}}
 [Pronunciation]: X.0/9
-- Intelligibility issues: {{count}}
 [Overall Band Score]: X.5/9
-
-**Detailed Feedback:**
-- List 3 main weaknesses
-- Suggest specific improvements
-
-**Response to evaluate:**
-"{text}"
+[Detailed Feedback]: Bullet points of key strengths and areas for improvement
+[Tips for improvement]: Suggestions for better performance
+Response to analyze: "{text}"
 
 Evaluation:"""
 
     response = requests.post(
         HF_API_URL,
         headers=HF_HEADERS,
-        json={
-            "inputs": prompt,
-            "parameters": {
-                "temperature": 0.2,  # More deterministic
-                "max_new_tokens": 800,
-            },
-        },
+        json={"inputs": prompt, "parameters": {"max_new_tokens": 600}},
     )
-    print("in get_hf_evaluation")
-    return response.json()[0]["generated_text"]
+
+    if response.status_code == 200:
+        print("it is in hugging face evaluation")
+        return response.json()[0]["generated_text"]
+    return "Evaluation service is currently unavailable. Please try again later."
 
 
 def get_deepseek_evaluation(text):
@@ -483,28 +453,6 @@ def get_evaluation(text):
     return get_deepseek_evaluation(text)
 
 
-def calculate_penalties(transcript: str) -> Dict[str, int]:
-    """Automatically detect common errors"""
-    return {
-        "grammar_errors": len(list(nlp(transcript).iter_errors())),
-        "repetitions": len(re.findall(r"\b(\w+)\s+\1\b", transcript, re.I)),
-        "fillers": len(re.findall(r"\b(uh|um|like|you know)\b", transcript, re.I)),
-        "long_pauses": len(re.findall(r"\.{3,}|…", transcript)),
-    }
-
-
-def apply_penalties(raw_score: float, penalties: dict) -> float:
-    """Adjust score based on detected errors"""
-    deduction = min(
-        (penalties["grammar_errors"] * 0.2)
-        + (penalties["repetitions"] * 0.15)
-        + (penalties["fillers"] * 0.1)
-        + (penalties["long_pauses"] * 0.1),
-        2.5,  # Max total deduction
-    )
-    return max(raw_score - deduction, 0)
-
-
 def format_score(category, scores):
     score = float(scores.get(category, 0))
     filled = "●" * int(score)
@@ -512,36 +460,29 @@ def format_score(category, scores):
     return f"▸ *{category}*: {filled}{empty} {score}/9"
 
 
-IELTS_BAND_DESCRIPTORS = {
-    "9": "Speaks fluently with no hesitation, full grammatical control",
-    "8": "Occasional hesitations, wide vocabulary range",
-    "7": "Noticeable pauses, some vocabulary limitations",
-    "6": "Frequent hesitations, limited vocabulary",
-    "5": "Slow speech, simple structures, frequent errors",
-}
-
-
-nlp = stanza.Pipeline(lang="en", processors="tokenize")
-
-
-def validate_score(score: float, category: str, transcript: str) -> float:
-    """Ensure scores match official descriptors"""
-    key = str(math.floor(score))
-    descriptor = IELTS_BAND_DESCRIPTORS.get(key, "")
-
-    if score >= 7.0 and any(
-        [
-            "simple structures" in descriptor.lower() in transcript,
-            len(nlp(transcript).sentences) < 5,
-            len(transcript.split()) < 100,
-        ]
-    ):
-        return min(score, 6.5)
-    return score
+def format_overall(score):
+    if isinstance(score, float):
+        return f"{score}/9 ({ielts_band_description(score)})"
+    return "Pending evaluation"
 
 
 def truncate_text(text, max_length):
     return (text[:max_length] + "...") if len(text) > max_length else text
+
+
+def ielts_band_description(score):
+    descriptions = {
+        9.0: "Expert User",
+        8.5: "Very Good User",
+        8.0: "Very Good User",
+        7.5: "Good User",
+        7.0: "Good User",
+        6.5: "Competent User",
+        6.0: "Competent User",
+        5.5: "Modest User",
+        5.0: "Modest User",
+    }
+    return descriptions.get(score, "Needs Improvement")
 
 
 def show_history(update: Update, context: CallbackContext):
