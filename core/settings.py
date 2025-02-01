@@ -141,5 +141,4 @@ if env.bool("USE_SENTRY", default=True):
         _experiments={
             "continuous_profiling_auto_start": True,
         },
-        environment=env("ENVIRONMENT, default='production'"),
     )
