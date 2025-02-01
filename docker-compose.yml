@@ -14,13 +14,23 @@ services:
     volumes:
       - .:/app
       - audio_files:/app/audio_files
+      - static:/app/static
     ports:
       - "8000:8000"
     env_file:
       - .env
     depends_on:
       - db
-
+  nginx:
+    image: nginx:latest
+    container_name: nginx_proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./static:/app/static # Serve static files
+    depends_on:
+      - web
   bot:
     build: .
     command: python manage.py runbot
@@ -35,3 +45,5 @@ services:
 volumes:
   postgres_data:
   audio_files:
+
+
