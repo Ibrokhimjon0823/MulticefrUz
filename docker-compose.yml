@@ -45,5 +45,6 @@ services:
 volumes:
   postgres_data:
   audio_files:
+  static:
 
 
