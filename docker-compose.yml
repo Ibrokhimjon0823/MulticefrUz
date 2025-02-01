@@ -7,9 +7,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=ielts_bot_db
-      - POSTGRES_USER=ielts_bot_user
-      - POSTGRES_PASSWORD=Mr_coolman_23
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
 
   web:
     build: .
@@ -19,11 +19,8 @@ services:
       - audio_files:/app/audio_files
     ports:
       - "8000:8000"
-    environment:
-      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
-      - DATABASE_URL=postgres://ielts_bot_user:Mr_coolman_23@db:5432/ielts_bot_db
-      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
-      - HF_TOKEN=${HF_TOKEN}
+    env_file:
+      - .env
     depends_on:
       - db
 
@@ -33,11 +30,8 @@ services:
     volumes:
       - .:/app
       - audio_files:/app/audio_files
-    environment:
-      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
-      - DATABASE_URL=postgres://ielts_bot_user:Mr_coolman_23@db:5432/ielts_bot_db
-      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
-      - HF_TOKEN=${HF_TOKEN}
+    env_file:
+      - .env
     depends_on:
       - db
 
