@@ -118,12 +118,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "/static/"  # Ensure this is correct
-STATIC_ROOT = "/var/www/MulticefrUz/static/"  # Or any valid path
-STATICFILES_DIRS = [
-    BASE_DIR / "staticfiles",  # Example, only if needed
-]
-
+# Static files (CSS, JavaScript, Images)
+STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = (BASE_DIR / "assets",)
 
 # Media files
 MEDIA_URL = "/media/"
@@ -143,4 +141,5 @@ if env.bool("USE_SENTRY", default=True):
         _experiments={
             "continuous_profiling_auto_start": True,
         },
+        environment=env("ENVIRONMENT, default='production'"),
     )
