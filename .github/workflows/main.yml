@@ -1,0 +1,29 @@
+name: CI/CD Pipeline
+on:
+  push:
+    # Specifies the branches that trigger the GitHub Actions workflow
+    # When a push occurs to either the 'production' or 'shared' branches, the workflow will be activated
+    branches: [main]
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' # Only run this job on the main branch
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to production server
+        # This action uses SSH to connect to the production server and execute commands to deploy the application to the production server. It also uses the docker-compose command to build and start the application.
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.CONTABO_HOST }}
+          username: ${{ secrets.CONTABO_USER }}
+          key: ${{ secrets.CONTABO_SSH_KEY }}
+          script: |
+            echo ${{ secrets.SUDO_PASSWORD }} | sudo -S su
+            cd /var/www/MulticefrUz
+            docker system prune -f
+            git pull
+            docker-compose down
+            docker-compose up -d --build
