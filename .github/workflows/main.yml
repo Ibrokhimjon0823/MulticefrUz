@@ -21,9 +21,10 @@ jobs:
           username: ${{ secrets.CONTABO_USER }}
           key: ${{ secrets.CONTABO_SSH_KEY }}
           script: |
-            echo ${{ secrets.SUDO_PASSWORD }} | sudo -S chown -R $USER:$USER /var/www/MulticefrUz
+            echo ${{ secrets.SUDO_PASSWORD }} | sudo -S su
             cd /var/www/MulticefrUz
+            docker system prune -f
+            echo ${{ secrets.SUDO_PASSWORD }} | sudo -S chown -R $(whoami):$(whoami) /var/www/MulticefrUz
             git pull
-            echo ${{ secrets.SUDO_PASSWORD }} | sudo -S docker system prune -f
-            echo ${{ secrets.SUDO_PASSWORD }} | sudo -S docker-compose down
-            echo ${{ secrets.SUDO_PASSWORD }} | sudo -S docker-compose up -d --build
+            docker-compose down
+            docker-compose up -d --build
