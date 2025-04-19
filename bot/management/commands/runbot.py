@@ -544,25 +544,24 @@ def extract_score(eval_text):
 def stats_command(update: Update, context: CallbackContext):
     """Handle /stats command"""
     print("stats command")
-    # user = get_or_create_user(update)
-    # attempts = Attempt.objects.filter(user=user).order_by("-created_at")
-    # total_attempts = attempts.count()
-    # total_score = sum(attempt.score for attempt in attempts)
-    # average_score = total_score / total_attempts if total_attempts > 0 else 0
-    # # attempts has score attribute, find the highest score without using extract_score
-    # highest = max(attempts, key=lambda x: x.score) if attempts else "N/A"
-    # lowest = min(attempts, key=lambda x: x.score) if attempts else "N/A"
+    user = get_or_create_user(update)
+    attempts = Attempt.objects.filter(user=user).order_by("-created_at")
+    total_attempts = attempts.count()
+    total_score = sum(attempt.score for attempt in attempts)
+    average_score = total_score / total_attempts if total_attempts > 0 else 0
+    # attempts has score attribute, find the highest score without using extract_score
+    highest = max(attempts, key=lambda x: x.score) if attempts else "N/A"
+    lowest = min(attempts, key=lambda x: x.score) if attempts else "N/A"
 
-    # message = (
-    #     f"📊 Statistics for {user.username}:\n"
-    #     f"Total Attempts: {total_attempts}\n"
-    #     f"Total Score: {total_score:.2f}\n"
-    #     f"Average Score: {average_score:.2f}\n\n"
-    #     f"🏆 Highest Score: {highest}\n"
-    #     f"📉 Lowest Score: {lowest}\n\n"
-    #     f"Total number of users: {User.objects.count()}"
-    # )
-    message = "Statistics are not available yet."
+    message = (
+        f"📊 Statistics for {user.username}:\n"
+        f"Total Attempts: {total_attempts}\n"
+        f"Total Score: {total_score:.2f}\n"
+        f"Average Score: {average_score:.2f}\n\n"
+        f"🏆 Highest Score: {highest}\n"
+        f"📉 Lowest Score: {lowest}\n\n"
+        f"Total number of users: {User.objects.count()}"
+    )
     # Handle both callback queries and direct commands
     if update.callback_query:
         update.callback_query.edit_message_text(text=message)
