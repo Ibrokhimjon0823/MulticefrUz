@@ -138,7 +138,7 @@ def show_help(update: Update, context: CallbackContext):
         "🔤 Grammatical Range\n"
         "🗣 Pronunciation\n\n"
         "*Need Help?*\n"
-        "Contact: @your_support_username"
+        "Contact: @coolman99"
     )
 
     keyboard = [[InlineKeyboardButton("« Back to Menu", callback_data="start")]]
@@ -563,7 +563,11 @@ def stats_command(update: Update, context: CallbackContext):
     #     f"Total number of users: {User.objects.count()}"
     # )
     message = "Statistics are not available yet."
-    update.message.reply_text(message)
+    # Handle both callback queries and direct commands
+    if update.callback_query:
+        update.callback_query.edit_message_text(text=message)
+    else:
+        update.message.reply_text(text=message)
 
 
 class Command(BaseCommand):
