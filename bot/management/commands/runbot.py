@@ -518,6 +518,15 @@ def parse_band_score(evaluation):
     return "N/A"
 
 
+def extract_score(eval_text):
+    try:
+        return float(
+            eval_text.split("[Overall Band Score]:")[-1].split("\n")[0].strip()
+        )
+    except (ValueError, IndexError):
+        return 0.0  # or None
+
+
 def stats_command(update: Update, context: CallbackContext):
     user = get_or_create_user(update)
     attempts = Attempt.objects.filter(user=user).order_by("-created_at")
@@ -529,15 +538,27 @@ def stats_command(update: Update, context: CallbackContext):
         for attempt in attempts
     )
     average_score = total_score / total_attempts if total_attempts > 0 else 0
+    highest = (
+        max(attempts, key=lambda x: extract_score(x.evaluation)).evaluation
+        if attempts
+        else "N/A"
+    )
+    lowest = (
+        min(attempts, key=lambda x: extract_score(x.evaluation)).evaluation
+        if attempts
+        else "N/A"
+    )
+
     message = (
         f"📊 Statistics for {user.username}:\n"
         f"Total Attempts: {total_attempts}\n"
         f"Total Score: {total_score:.2f}\n"
         f"Average Score: {average_score:.2f}\n\n"
-        f"🏆 Highest Score: {max(attempts, key=lambda x: float(x.evaluation.split('[Overall Band Score]:')[-1].split('\n')[0].strip())).evaluation if attempts else 'N/A'}\n"
-        f"📉 Lowest Score: {min(attempts, key=lambda x: float(x.evaluation.split('[Overall Band Score]:')[-1].split('\n\n')[0].strip())).evaluation if attempts else 'N/A'}\n"
+        f"🏆 Highest Score: {highest}\n"
+        f"📉 Lowest Score: {lowest}\n\n"
         f"Total number of users: {User.objects.count()}"
     )
+
     update.message.reply_text(message)
 
 
