@@ -56,7 +56,10 @@ def show_main_menu(update: Update, context: CallbackContext):
             InlineKeyboardButton("📝 Practice", callback_data="select_test"),
             InlineKeyboardButton("📚 History", callback_data="history"),
         ],
-        [InlineKeyboardButton("ℹ️ Help", callback_data="help")],
+        [
+            InlineKeyboardButton("ℹ️ Help", callback_data="help"),
+            InlineKeyboardButton("📊 Stats", callback_data="stats"),
+        ],
     ]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -110,6 +113,8 @@ def handle_callback(update: Update, context: CallbackContext):
         show_history(update, context)
     elif query.data == "help":
         show_help(update, context)
+    elif query.data == "stats":
+        stats_command(update, context)
 
 
 def show_help(update: Update, context: CallbackContext):
