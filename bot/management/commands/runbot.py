@@ -77,7 +77,7 @@ def start(update: Update, context: CallbackContext):
     get_or_create_user(update)
 
     # Persistent reply keyboard
-    reply_keyboard = [["/start", "/help"], ["Practice Questions", "My History"]]
+    reply_keyboard = [["/start", "/help"], ["/history", "/stats"]]
     reply_markup = ReplyKeyboardMarkup(
         reply_keyboard, resize_keyboard=True, persistent=True
     )
@@ -592,8 +592,13 @@ class Command(BaseCommand):
         updater = Updater(token=token, use_context=True)  # Add use_context=True
         dp = updater.dispatcher
 
-        # Rest of your code remains the same
+        # Register command handlers
         dp.add_handler(CommandHandler("start", start))
+        dp.add_handler(CommandHandler("help", show_help))
+        dp.add_handler(CommandHandler("history", show_history))
+        dp.add_handler(CommandHandler("stats", stats_command))
+
+        # Register callback query handlers
         dp.add_handler(CallbackQueryHandler(handle_callback))
         dp.add_handler(MessageHandler(Filters.voice, handle_voice))
 
