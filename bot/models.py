@@ -24,6 +24,8 @@ class Attempt(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="attempts")
     transcript = models.TextField()
     evaluation = models.TextField()
+    score = models.FloatField(null=True, blank=True)  # Score out of 9
+    feedback = models.TextField(null=True, blank=True)  # Feedback from the evaluator
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

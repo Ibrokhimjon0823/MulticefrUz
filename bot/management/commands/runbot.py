@@ -308,12 +308,18 @@ def handle_voice(update: Update, context: CallbackContext):
         raw_evaluation = get_hf_evaluation(transcript)
 
         # Save attempt to database
-        Attempt.objects.create(
-            user=user, transcript=transcript, evaluation=raw_evaluation
-        )
 
         # Format response and send message with keyboard
-        formatted_response = format_evaluation_response(transcript, raw_evaluation)
+        formatted_response, overall = format_evaluation_response(
+            transcript, raw_evaluation
+        )
+        Attempt.objects.create(
+            user=user,
+            transcript=transcript,
+            evaluation=raw_evaluation,
+            score=overall,
+            feedback=formatted_response,
+        )
 
         # Create keyboard markup
         keyboard = [
@@ -372,7 +378,8 @@ def format_evaluation_response(transcript, evaluation):
     tips = "\n".join([f"• {line.strip()}" for line in tips.split("\n") if line.strip()])
 
     # Return only the formatted text
-    return f"""
+    return (
+        f"""
 🎤 *Transcript*:
 _{truncate_text(transcript, 300)}_
 
@@ -389,7 +396,9 @@ _{truncate_text(transcript, 300)}_
 
 💡 *Tips for improvement*
 {tips}
-"""
+""",
+        overall,
+    )
 
 
 def get_hf_evaluation(text):
@@ -533,26 +542,16 @@ def extract_score(eval_text):
 
 
 def stats_command(update: Update, context: CallbackContext):
+    """Handle /stats command"""
+    print("stats command")
     user = get_or_create_user(update)
     attempts = Attempt.objects.filter(user=user).order_by("-created_at")
     total_attempts = attempts.count()
-    total_score = sum(
-        float(
-            attempt.evaluation.split("[Overall Band Score]:")[-1].split("\n")[0].strip()
-        )
-        for attempt in attempts
-    )
+    total_score = sum(attempt.score for attempt in attempts)
     average_score = total_score / total_attempts if total_attempts > 0 else 0
-    highest = (
-        max(attempts, key=lambda x: extract_score(x.evaluation)).evaluation
-        if attempts
-        else "N/A"
-    )
-    lowest = (
-        min(attempts, key=lambda x: extract_score(x.evaluation)).evaluation
-        if attempts
-        else "N/A"
-    )
+    # attempts has score attribute, find the highest score without using extract_score
+    highest = max(attempts, key=lambda x: x.score) if attempts else "N/A"
+    lowest = min(attempts, key=lambda x: x.score) if attempts else "N/A"
 
     message = (
         f"📊 Statistics for {user.username}:\n"
