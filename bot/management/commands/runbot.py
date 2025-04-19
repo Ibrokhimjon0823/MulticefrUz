@@ -518,6 +518,29 @@ def parse_band_score(evaluation):
     return "N/A"
 
 
+def stats_command(update: Update, context: CallbackContext):
+    user = get_or_create_user(update)
+    attempts = Attempt.objects.filter(user=user).order_by("-created_at")
+    total_attempts = attempts.count()
+    total_score = sum(
+        float(
+            attempt.evaluation.split("[Overall Band Score]:")[-1].split("\n")[0].strip()
+        )
+        for attempt in attempts
+    )
+    average_score = total_score / total_attempts if total_attempts > 0 else 0
+    message = (
+        f"📊 Statistics for {user.username}:\n"
+        f"Total Attempts: {total_attempts}\n"
+        f"Total Score: {total_score:.2f}\n"
+        f"Average Score: {average_score:.2f}\n\n"
+        f"🏆 Highest Score: {max(attempts, key=lambda x: float(x.evaluation.split('[Overall Band Score]:')[-1].split('\n')[0].strip())).evaluation if attempts else 'N/A'}\n"
+        f"📉 Lowest Score: {min(attempts, key=lambda x: float(x.evaluation.split('[Overall Band Score]:')[-1].split('\n\n')[0].strip())).evaluation if attempts else 'N/A'}\n"
+        f"Total number of users: {User.objects.count()}"
+    )
+    update.message.reply_text(message)
+
+
 class Command(BaseCommand):
     help = "Run Telegram Bot"
 
