@@ -579,9 +579,9 @@ class Command(BaseCommand):
 
         # Rest of your code remains the same
         dp.add_handler(CommandHandler("start", start))
+        dp.add_handler(CommandHandler("stats", stats_command))
         dp.add_handler(CallbackQueryHandler(handle_callback))
         dp.add_handler(MessageHandler(Filters.voice, handle_voice))
-        dp.add_handler(CommandHandler("stats", stats_command))
 
         self.stdout.write(self.style.SUCCESS("Bot is running..."))
         updater.start_polling()
