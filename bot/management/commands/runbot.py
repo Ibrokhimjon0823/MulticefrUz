@@ -550,8 +550,16 @@ def stats_command(update: Update, context: CallbackContext):
     total_score = sum(attempt.score for attempt in attempts)
     average_score = total_score / total_attempts if total_attempts > 0 else 0
     # attempts has score attribute, find the highest score without using extract_score
-    highest = Attempt.objects.filter(user=user).order_by("-score").first()
-    lowest = Attempt.objects.filter(user=user).order_by("score").first()
+    highest = (
+        Attempt.objects.filter(user=user).order_by("-score").first().score
+        if Attempt.objects.filter(user=user).exists()
+        else "N/A"
+    )
+    lowest = (
+        Attempt.objects.filter(user=user).order_by("score").first().score
+        if Attempt.objects.filter(user=user).exists()
+        else "N/A"
+    )
 
     message = (
         f"📊 Statistics for {user.username}:\n"
