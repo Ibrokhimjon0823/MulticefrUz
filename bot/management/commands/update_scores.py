@@ -36,6 +36,13 @@ class Command(BaseCommand):
                                 f"Could not find score in Attempt {attempt.id}"
                             )
                         )
+                        # i want to delete this attempt
+                        attempt.delete()
+                        self.stdout.write(
+                            self.style.SUCCESS(
+                                f"Deleted Attempt {attempt.id} due to missing score"
+                            )
+                        )
                 else:
                     self.stdout.write(
                         self.style.WARNING(
